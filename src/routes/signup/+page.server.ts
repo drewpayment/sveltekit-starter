@@ -1,6 +1,6 @@
 import { fail, redirect } from "@sveltejs/kit";
-import { checkEmailAvailability, verifyEmailInput } from "$lib/server/email";
-import { createUser, verifyUsernameInput } from "$lib/server/user";
+import { checkEmailAvailability } from "$lib/server/email";
+import { createUser } from "$lib/server/user";
 import { RefillingTokenBucket } from "$lib/server/rate-limit";
 import { verifyPasswordStrength } from "$lib/server/password";
 import { createSession, generateSessionToken, setSessionTokenCookie } from "$lib/server/session";
@@ -16,6 +16,7 @@ import type { SessionFlags } from "$lib/server/session";
 import type { Actions, PageServerLoadEvent, RequestEvent } from "./$types";
 import { formSchema } from './schema';
 import { zod } from 'sveltekit-superforms/adapters';
+import { dev } from '$app/environment';
 
 const ipBucket = new RefillingTokenBucket<string>(3, 10);
 
@@ -52,60 +53,35 @@ async function action(event: RequestEvent) {
 			username: ""
 		});
 	}
-
-	const formData = await event.request.formData();
-	const email = formData.get("email");
-	const username = formData.get("username");
-	const password = formData.get("password");
-	if (typeof email !== "string" || typeof username !== "string" || typeof password !== "string") {
+	
+	const form = await superValidate(event, zod(formSchema));
+	if (!form.valid) {
 		return fail(400, {
-			message: "Invalid or missing fields",
-			email: "",
-			username: ""
+			form,
 		});
 	}
-	if (email === "" || password === "" || username === "") {
-		return fail(400, {
-			message: "Please enter your username, email, and password",
-			email: "",
-			username: ""
-		});
-	}
-	if (!verifyEmailInput(email)) {
-		return fail(400, {
-			message: "Invalid email",
-			email,
-			username
-		});
-	}
+	
+	const { email, password } = form.data;
+	
 	const emailAvailable = checkEmailAvailability(email);
 	if (!emailAvailable) {
 		return fail(400, {
 			message: "Email is already used",
 			email,
-			username
 		});
 	}
-	if (!verifyUsernameInput(username)) {
-		return fail(400, {
-			message: "Invalid username",
-			email,
-			username
-		});
-	}
+	
 	const strongPassword = await verifyPasswordStrength(password);
 	if (!strongPassword) {
 		return fail(400, {
 			message: "Weak password",
 			email,
-			username
 		});
 	}
 	if (clientIP !== null && !ipBucket.consume(clientIP, 1)) {
 		return fail(429, {
 			message: "Too many requests",
 			email,
-			username
 		});
 	}
 	const user = await createUser(email, password);

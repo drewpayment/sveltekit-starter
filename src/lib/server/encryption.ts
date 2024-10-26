@@ -7,7 +7,7 @@ import { ENCRYPTION_KEY } from "$env/static/private";
 const key = decodeBase64(ENCRYPTION_KEY);
 
 export function encrypt(data: Uint8Array): Uint8Array {
-	const iv = new Uint8Array(16);
+	const iv = new Uint8Array(12);
 	crypto.getRandomValues(iv);
 	const cipher = createCipheriv("aes-128-gcm", key, iv);
 	const encrypted = new DynamicBuffer(0);
@@ -23,13 +23,13 @@ export function encryptString(data: string): Uint8Array {
 }
 
 export function decrypt(encrypted: Uint8Array): Uint8Array {
-	if (encrypted.byteLength < 33) {
+	if (encrypted.byteLength < 29) {
 		throw new Error("Invalid data");
 	}
-	const decipher = createDecipheriv("aes-128-gcm", key, encrypted.slice(0, 16));
+	const decipher = createDecipheriv("aes-128-gcm", key, encrypted.slice(0, 12));
 	decipher.setAuthTag(encrypted.slice(encrypted.byteLength - 16));
 	const decrypted = new DynamicBuffer(0);
-	decrypted.write(decipher.update(encrypted.slice(16, encrypted.byteLength - 16)));
+	decrypted.write(decipher.update(encrypted.slice(12, encrypted.byteLength - 16)));
 	decrypted.write(decipher.final());
 	return decrypted.bytes();
 }
