@@ -88,6 +88,15 @@ export async function invalidateSession(sessionId: string): Promise<void> {
 	await db.delete(sessions).where(eq(sessions.sessionId, sessionId));
 }
 
+export async function invalidateUserSessions(userId: number): Promise<void> {
+	try {
+		await db.delete(sessions).where(eq(sessions.userId, userId));
+	} catch (e) {
+		console.error(e);
+		throw e;
+	}
+}
+
 export type SessionValidationResult =
 	| { session: Session; user: AuthUser }
 	| { session: null; user: null };
@@ -109,6 +118,15 @@ export function deleteSessionTokenCookie(event: RequestEvent): void {
 		maxAge: 0,
 		path: "/"
 	});
+}
+
+export async function setSessionAs2FAVerified(sessionId: string): Promise<void> {
+  try {
+    await db.update(sessions).set({ mfaVerified: true }).where(eq(sessions.sessionId, sessionId));
+  } catch (e) {
+    console.error(e);
+    throw e;
+  }
 }
 
 export interface SessionFlags {

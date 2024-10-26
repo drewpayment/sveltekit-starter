@@ -40,19 +40,25 @@
   },
   "type": "module",
   "dependencies": {
+    "@effect/schema": "^0.75.5",
     "@neondatabase/serverless": "^0.10.1",
     "@node-rs/argon2": "^2.0.0",
     "@oslojs/binary": "^1.0.0",
     "@oslojs/crypto": "^1.0.1",
     "@oslojs/encoding": "^1.1.0",
+    "@oslojs/otp": "^1.0.0",
     "@oslojs/webauthn": "^1.0.0",
     "@pilcrowjs/object-parser": "^0.0.4",
     "bits-ui": "^0.21.16",
     "clsx": "^2.1.1",
     "dotenv": "^16.4.5",
     "drizzle-orm": "^0.35.3",
+    "formsnap": "^1.0.1",
     "nanoid": "^5.0.7",
+    "sveltekit-superforms": "^2.20.0",
     "tailwind-merge": "^2.5.4",
-    "tailwind-variants": "^0.2.1"
+    "tailwind-variants": "^0.2.1",
+    "uqr": "^0.1.2",
+    "zod": "^3.23.8"
   }
 }

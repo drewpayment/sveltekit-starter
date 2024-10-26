@@ -1,16 +1,23 @@
 import { fail, redirect } from "@sveltejs/kit";
-import { verifyEmailInput } from "$lib/server/email";
-import { getUserFromEmail, getUserPasswordHash } from "$lib/server/user";
-import { RefillingTokenBucket, Throttler } from "$lib/server/rate-limit";
-import { verifyPasswordHash } from "$lib/server/password";
+import { checkEmailAvailability, verifyEmailInput } from "$lib/server/email";
+import { createUser, verifyUsernameInput } from "$lib/server/user";
+import { RefillingTokenBucket } from "$lib/server/rate-limit";
+import { verifyPasswordStrength } from "$lib/server/password";
 import { createSession, generateSessionToken, setSessionTokenCookie } from "$lib/server/session";
+import {
+	createEmailVerificationRequest,
+	sendVerificationEmail,
+	setEmailVerificationRequestCookie
+} from "$lib/server/email-verification";
 import { get2FARedirect } from "$lib/server/2fa";
 import { superValidate } from "sveltekit-superforms";
-import { formSchema } from './form-schema';
-import { zod } from 'sveltekit-superforms/adapters';
 
 import type { SessionFlags } from "$lib/server/session";
 import type { Actions, PageServerLoadEvent, RequestEvent } from "./$types";
+import { formSchema } from './schema';
+import { zod } from 'sveltekit-superforms/adapters';
+
+const ipBucket = new RefillingTokenBucket<string>(3, 10);
 
 export async function load(event: PageServerLoadEvent) {
 	if (event.locals.session !== null && event.locals.user !== null) {
@@ -25,13 +32,11 @@ export async function load(event: PageServerLoadEvent) {
 		}
 		return redirect(302, "/");
 	}
+	
 	return {
 		form: await superValidate(zod(formSchema)),
 	};
 }
-
-const throttler = new Throttler<number>([0, 1, 2, 4, 8, 16, 30, 60, 180, 300]);
-const ipBucket = new RefillingTokenBucket<string>(20, 1);
 
 export const actions: Actions = {
 	default: action
@@ -43,71 +48,76 @@ async function action(event: RequestEvent) {
 	if (clientIP !== null && !ipBucket.check(clientIP, 1)) {
 		return fail(429, {
 			message: "Too many requests",
-			email: ""
+			email: "",
+			username: ""
 		});
 	}
 
 	const formData = await event.request.formData();
 	const email = formData.get("email");
+	const username = formData.get("username");
 	const password = formData.get("password");
-	if (typeof email !== "string" || typeof password !== "string") {
+	if (typeof email !== "string" || typeof username !== "string" || typeof password !== "string") {
 		return fail(400, {
 			message: "Invalid or missing fields",
-			email: ""
+			email: "",
+			username: ""
 		});
 	}
-	if (email === "" || password === "") {
+	if (email === "" || password === "" || username === "") {
 		return fail(400, {
-			message: "Please enter your email and password.",
-			email
+			message: "Please enter your username, email, and password",
+			email: "",
+			username: ""
 		});
 	}
 	if (!verifyEmailInput(email)) {
 		return fail(400, {
 			message: "Invalid email",
-			email
+			email,
+			username
 		});
 	}
-	const user = await getUserFromEmail(email);
-	if (user === null) {
+	const emailAvailable = checkEmailAvailability(email);
+	if (!emailAvailable) {
 		return fail(400, {
-			message: "Account does not exist",
-			email
+			message: "Email is already used",
+			email,
+			username
+		});
+	}
+	if (!verifyUsernameInput(username)) {
+		return fail(400, {
+			message: "Invalid username",
+			email,
+			username
+		});
+	}
+	const strongPassword = await verifyPasswordStrength(password);
+	if (!strongPassword) {
+		return fail(400, {
+			message: "Weak password",
+			email,
+			username
 		});
 	}
 	if (clientIP !== null && !ipBucket.consume(clientIP, 1)) {
 		return fail(429, {
 			message: "Too many requests",
-			email: ""
+			email,
+			username
 		});
 	}
-	if (!throttler.consume(user.id)) {
-		return fail(429, {
-			message: "Too many requests",
-			email: ""
-		});
-	}
-	const passwordHash = await getUserPasswordHash(user.id);
-	const validPassword = await verifyPasswordHash(passwordHash, password);
-	if (!validPassword) {
-		return fail(400, {
-			message: "Invalid password",
-			email
-		});
-	}
-	throttler.reset(user.id);
+	const user = await createUser(email, password);
+	const emailVerificationRequest = await createEmailVerificationRequest(user.id, user.email);
+	sendVerificationEmail(emailVerificationRequest.email, emailVerificationRequest.code);
+	setEmailVerificationRequestCookie(event, emailVerificationRequest);
+
 	const sessionFlags: SessionFlags = {
 		twoFactorVerified: false
 	};
 	const sessionToken = generateSessionToken();
 	const session = await createSession(sessionToken, user.id, sessionFlags);
 	setSessionTokenCookie(event, sessionToken, session.expiresAt);
-
-	if (!user.emailVerified) {
-		return redirect(302, "/verify-email");
-	}
-	if (!user.registered2FA) {
-		return redirect(302, "/2fa/setup");
-	}
-	return redirect(302, get2FARedirect(user));
+	throw redirect(302, "/2fa/setup");
 }

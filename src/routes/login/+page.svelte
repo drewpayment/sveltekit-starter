@@ -3,68 +3,65 @@
 	import { createChallenge } from "$lib/client/webauthn";
 	import { encodeBase64 } from "@oslojs/encoding";
 	import { goto } from "$app/navigation";
+	import * as Card from '$lib/components/ui/card';
+  import LoginForm from './login-form.svelte';
+  import type { PageData } from '../$types';
 
-	import type { ActionData } from "./$types";
+	export let data: PageData;
 
-	export let form: ActionData;
-
-	let passkeyErrorMessage = "";
+	let passkeyErrorMessage = {} as { message: string };
 </script>
 
-<h1>Sign in</h1>
-<form method="post" use:enhance>
-	<label for="form-login.email">Email</label>
-	<input
-		type="email"
-		id="form-login.email"
-		name="email"
-		autocomplete="username"
-		required
-		value={form?.email ?? ""}
-	/><br />
-	<label for="form-login.password">Password</label>
-	<input type="password" id="form-login.password" name="password" autocomplete="current-password" required /><br />
-	<button>Continue</button>
-	<p>{form?.message ?? ""}</p>
-</form>
-<div>
-	<button
-		on:click={async () => {
-			const challenge = await createChallenge();
-
-			const credential = await navigator.credentials.get({
-				publicKey: {
-					challenge,
-					userVerification: "required"
-				}
-			});
-
-			if (!(credential instanceof PublicKeyCredential)) {
-				throw new Error("Failed to create public key");
-			}
-			if (!(credential.response instanceof AuthenticatorAssertionResponse)) {
-				throw new Error("Unexpected error");
-			}
-
-			const response = await fetch("/login/passkey", {
-				method: "POST",
-				// this example uses JSON but you can use something like CBOR to get something more compact
-				body: JSON.stringify({
-					credential_id: encodeBase64(new Uint8Array(credential.rawId)),
-					signature: encodeBase64(new Uint8Array(credential.response.signature)),
-					authenticator_data: encodeBase64(new Uint8Array(credential.response.authenticatorData)),
-					client_data_json: encodeBase64(new Uint8Array(credential.response.clientDataJSON))
-				})
-			});
-
-			if (response.ok) {
-				goto("/");
-			} else {
-				passkeyErrorMessage = await response.text();
-			}
-		}}>Sign in with passkeys</button
-	>
-	<p>{passkeyErrorMessage}</p>
+<div class="flex lg:h-[1000px] w-full justify-center items-center">
+	<Card.Root class="max-w-lg flex-1">
+		<Card.Header>
+			<Card.Title>Sign In</Card.Title>
+		</Card.Header>
+		<Card.Content>
+			<LoginForm data={data.form} />
+		</Card.Content>
+		<Card.Footer class="flex flex-col justify-start items-start">
+			<div>
+				<button
+					on:click={async () => {
+						const challenge = await createChallenge();
+			
+						const credential = await navigator.credentials.get({
+							publicKey: {
+								challenge,
+								userVerification: "required"
+							}
+						});
+			
+						if (!(credential instanceof PublicKeyCredential)) {
+							throw new Error("Failed to create public key");
+						}
+						if (!(credential.response instanceof AuthenticatorAssertionResponse)) {
+							throw new Error("Unexpected error");
+						}
+			
+						const response = await fetch("/login/passkey", {
+							method: "POST",
+							// this example uses JSON but you can use something like CBOR to get something more compact
+							body: JSON.stringify({
+								credential_id: encodeBase64(new Uint8Array(credential.rawId)),
+								signature: encodeBase64(new Uint8Array(credential.response.signature)),
+								authenticator_data: encodeBase64(new Uint8Array(credential.response.authenticatorData)),
+								client_data_json: encodeBase64(new Uint8Array(credential.response.clientDataJSON))
+							})
+						});
+			
+						if (response.ok) {
+							goto("/");
+						} else {
+							passkeyErrorMessage = await response.json();
+						}
+					}}>Sign in with passkeys</button
+				>
+				<p class="text-red-500">{passkeyErrorMessage.message}</p>
+			</div>
+			<a href="/signup">Create an account</a>
+			<a href="/forgot-password">Forgot password?</a>
+		</Card.Footer>
+	</Card.Root>
 </div>
-<a href="/signup">Create an account</a>
-<a href="/forgot-password">Forgot password?</a>

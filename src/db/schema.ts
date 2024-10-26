@@ -66,12 +66,40 @@ export const sessions = pgTable("session", {
   mfaVerified: boolean('mfa_verified'),
 });
 
+export const passwordResets = pgTable('password_resets', {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  userId: integer('user_id').notNull().references(() => users.id),
+  resetId: varchar('session_id', { length: 255 }).notNull().unique(),
+  email: varchar({ length: 255 }).notNull(),
+  code: varchar({ length: 255 }).notNull(),
+  emailVerified: boolean('email_verified').default(false),
+  mfaVerified: boolean('mfa_verified').default(false),
+  expiresAt: timestamp("expires_at", {
+    mode: 'date',
+    withTimezone: true,
+  }),
+});
+
+export const emailVerificationRequest = pgTable('email_verification_request', {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  requestId: varchar('request_id', { length: 255 }).notNull().unique(),
+  userId: integer('user_id').notNull().references(() => users.id),
+  email: varchar({ length: 255 }).notNull(),
+  code: varchar({ length: 255 }).notNull(),
+  expiresAt: timestamp("expires_at", {
+    mode: 'date',
+    withTimezone: true,
+  }),
+})
+
 export type User = InferSelectModel<typeof users>;
 export type TOTPCredentials = InferSelectModel<typeof totpCredentials>;
 export type PasskeyCredentials = InferSelectModel<typeof passkeyCredentials>;
 export type SecurityKeyCredentials = InferSelectModel<typeof securityKeyCredentials>;
 export type UserProfile = InferSelectModel<typeof userProfiles>;
 export type Session = InferSelectModel<typeof sessions>;
+export type PasswordReset = InferSelectModel<typeof passwordResets>;
+export type EmailVerificationRequest = InferSelectModel<typeof emailVerificationRequest>;
 
 export interface AuthUser extends User {
   registeredTOTP: boolean;
