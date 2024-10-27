@@ -25,6 +25,9 @@ import type {
 	COSERSAPublicKey
 } from "@oslojs/webauthn";
 import type { Actions, RequestEvent } from "./$types";
+import { superValidate } from 'sveltekit-superforms/server';
+import { zod } from 'sveltekit-superforms/adapters';
+import { formSchema } from './form-schema';
 
 export async function load(event: RequestEvent) {
 	if (event.locals.session === null || event.locals.user === null) {
@@ -33,11 +36,11 @@ export async function load(event: RequestEvent) {
 	if (!event.locals.user.emailVerified) {
 		return redirect(302, "/verify-email");
 	}
-	if (event.locals.user.registered2FA && !event.locals.session.twoFactorVerified) {
+	if (event.locals.user.registered2FA && !event.locals.session.mfaVerified) {
 		return redirect(302, get2FARedirect(event.locals.user));
 	}
 
-	const credentials = getUserPasskeyCredentials(event.locals.user.id);
+	const credentials = await getUserPasskeyCredentials(event.locals.user.id);
 
 	const credentialUserId = new Uint8Array(8);
 	bigEndian.putUint64(credentialUserId, BigInt(event.locals.user.id), 0);
@@ -45,7 +48,8 @@ export async function load(event: RequestEvent) {
 	return {
 		credentials,
 		credentialUserId,
-		user: event.locals.user
+		user: event.locals.user,
+		form: await superValidate(zod(formSchema)),
 	};
 }
 
@@ -64,16 +68,25 @@ async function action(event: RequestEvent) {
 			message: "Forbidden"
 		});
 	}
-	if (event.locals.user.registered2FA && !event.locals.session.twoFactorVerified) {
+	if (event.locals.user.registered2FA && !event.locals.session.mfaVerified) {
 		return fail(403, {
 			message: "Forbidden"
 		});
 	}
 
-	const formData = await event.request.formData();
-	const name = formData.get("name");
-	const encodedAttestationObject = formData.get("attestation_object");
-	const encodedClientDataJSON = formData.get("client_data_json");
+	const form = await superValidate(event, zod(formSchema));
+	const { 
+		name, 
+		attestation_object: encodedAttestationObject, 
+		client_data_json: encodedClientDataJSON 
+	} = form.data;
+	
+	if (!form.valid) return fail(400, { form });
+	
+	// const formData = await event.request.formData();
+	// const name = formData.get("name");
+	// const encodedAttestationObject = formData.get("attestation_object");
+	// const encodedClientDataJSON = formData.get("client_data_json");
 	if (
 		typeof name !== "string" ||
 		typeof encodedAttestationObject !== "string" ||
@@ -213,15 +226,15 @@ async function action(event: RequestEvent) {
 	}
 
 	try {
-		createPasskeyCredential(credential);
+		await createPasskeyCredential(credential);
 	} catch (e) {
 		return fail(500, {
 			message: "Internal error"
 		});
 	}
 
-	if (!event.locals.session.twoFactorVerified) {
-		setSessionAs2FAVerified(event.locals.session.id);
+	if (!event.locals.session.mfaVerified) {
+		await setSessionAs2FAVerified(event.locals.session.sessionId);
 	}
 
 	if (!event.locals.user.registered2FA) {

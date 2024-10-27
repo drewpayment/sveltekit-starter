@@ -18,14 +18,20 @@
   const { form: formData, enhance } = form;
 </script>
 
-<form method="post" use:enhance action="?/verify">
-	<Form.Field {form} name="code">
-		<Form.Control let:attrs>
-			<Form.Label>Code</Form.Label>
-			<Input {...attrs} bind:value={$formData.code} />
-		</Form.Control>
-    <Form.FieldErrors />
-	</Form.Field>
+<div class="flex flex-col gap-2">
+  <form method="post" use:enhance action="?/verify">
+    <Form.Field {form} name="code">
+      <Form.Control let:attrs>
+        <Form.Label>Code</Form.Label>
+        <Input {...attrs} bind:value={$formData.code} />
+      </Form.Control>
+      <Form.FieldErrors />
+    </Form.Field>
+    
+    <Form.Button>Verify Code</Form.Button>
+  </form>
   
-	<Form.Button>Resend Code</Form.Button>
-</form>
+  <form action="?/resend" method="post" use:enhance>
+    <Form.Button color="gray">Resend Code</Form.Button>
+  </form>
+</div>

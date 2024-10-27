@@ -17,7 +17,7 @@ export async function load(event: RequestEvent) {
 	if (!event.locals.session.mfaVerified) {
 		return redirect(302, get2FARedirect(event.locals.user));
 	}
-	const recoveryCode = getUserRecoveryCode(event.locals.user.id);
+	const recoveryCode = await getUserRecoveryCode(event.locals.user.id);
 	return {
 		recoveryCode
 	};

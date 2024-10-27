@@ -1,75 +1,24 @@
 <script lang="ts">
-	import { encodeBase64 } from "@oslojs/encoding";
-	import { createChallenge } from "$lib/client/webauthn";
-	import { enhance } from "$app/forms";
-
-	import type { ActionData, PageData } from "./$types";
+	import type { PageData } from "./$types";
+  import Form from './form.svelte';
+	import * as Card from "$lib/components/ui/card";
 
 	export let data: PageData;
-	export let form: ActionData;
-
-	let encodedAttestationObject: string | null = null;
-	let encodedClientDataJSON: string | null = null;
 </script>
 
-<h1>Register passkey</h1>
-<button
-	disabled={encodedAttestationObject !== null && encodedClientDataJSON !== null}
-	on:click={async () => {
-		const challenge = await createChallenge();
+<div class="flex lg:h-100 w-full justify-center items-center">
+	<Card.Root>
+		<Card.Header>
+			<Card.Title>Register Passkey</Card.Title>
+		</Card.Header>
+		<Card.Content>
+			<Form data={{
+				form: data.form,
+				user: data.user,
+				credentialUserId: data.credentialUserId,
+				credentials: data.credentials,
+			}} />
+		</Card.Content>
+	</Card.Root>
+</div>
 
-		const credential = await navigator.credentials.create({
-			publicKey: {
-				challenge,
-				user: {
-					displayName: data.user.username,
-					id: data.credentialUserId,
-					name: data.user.email
-				},
-				rp: {
-					name: "SvelteKit WebAuthn example"
-				},
-				pubKeyCredParams: [
-					{
-						alg: -7,
-						type: "public-key"
-					},
-					{
-						alg: -257,
-						type: "public-key"
-					}
-				],
-				attestation: "none",
-				authenticatorSelection: {
-					userVerification: "required",
-					residentKey: "required",
-					requireResidentKey: true
-				},
-				excludeCredentials: data.credentials.map((credential) => {
-					return {
-						id: credential.id,
-						type: "public-key"
-					};
-				})
-			}
-		});
-
-		if (!(credential instanceof PublicKeyCredential)) {
-			throw new Error("Failed to create public key");
-		}
-		if (!(credential.response instanceof AuthenticatorAttestationResponse)) {
-			throw new Error("Unexpected error");
-		}
-
-		encodedAttestationObject = encodeBase64(new Uint8Array(credential.response.attestationObject));
-		encodedClientDataJSON = encodeBase64(new Uint8Array(credential.response.clientDataJSON));
-	}}>Create credential</button
->
-<form method="post" use:enhance>
-	<label for="form-register-credential.name">Credential name</label>
-	<input id="form-register-credential.name" name="name" />
-	<input type="hidden" name="attestation_object" value={encodedAttestationObject} />
-	<input type="hidden" name="client_data_json" value={encodedClientDataJSON} />
-	<button disabled={encodedAttestationObject === null && encodedClientDataJSON === null}>Continue</button>
-	<p>{form?.message ?? ""}</p>
-</form>

@@ -21,6 +21,7 @@ export function verifyWebAuthnChallenge(challenge: Uint8Array): boolean {
 export async function getUserPasskeyCredentials(userId: number): Promise<WebAuthnUserCredential[]> {
   const credentials = (await db.select({
       id: passkeyCredentials.id,
+      credentialId: passkeyCredentials.credentialId,
       userId: passkeyCredentials.userId,
       name: passkeyCredentials.name,
       algorithmId: passkeyCredentials.algorithmId,

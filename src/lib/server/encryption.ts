@@ -35,5 +35,5 @@ export function decrypt(encrypted: Uint8Array): Uint8Array {
 }
 
 export function decryptToString(data: Uint8Array): string {
-	return new TextDecoder().decode(decrypt(data));
+	return new TextDecoder('utf-8').decode(decrypt(data));
 }

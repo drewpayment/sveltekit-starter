@@ -13,6 +13,9 @@ import { updateUserEmailAndSetEmailAsVerified } from "$lib/server/user";
 import { ExpiringTokenBucket } from "$lib/server/rate-limit";
 
 import type { Actions, RequestEvent } from "./$types";
+import { superValidate } from 'sveltekit-superforms';
+import { zod } from 'sveltekit-superforms/adapters';
+import { formSchema } from './schema';
 
 export async function load(event: RequestEvent) {
 	if (event.locals.user === null) {
@@ -28,8 +31,10 @@ export async function load(event: RequestEvent) {
 		sendVerificationEmail(verificationRequest.email, verificationRequest.code);
 		setEmailVerificationRequestCookie(event, verificationRequest);
 	}
+	
 	return {
-		email: verificationRequest.email
+		email: verificationRequest.email,
+		form: await superValidate(zod(formSchema)),
 	};
 }
 
@@ -59,8 +64,12 @@ async function verifyCode(event: RequestEvent) {
 	if (verificationRequest === null) {
 		return fail(401);
 	}
-	const formData = await event.request.formData();
-	const code = formData.get("code");
+	
+	const form = await superValidate(event, zod(formSchema));
+	if (!form.valid) return fail(400, { form });
+	
+	const { code } = form.data;
+	
 	if (typeof code !== "string") {
 		return fail(400, {
 			verify: {

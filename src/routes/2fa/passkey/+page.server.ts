@@ -14,13 +14,13 @@ export async function load(event: RequestEvent) {
 	if (!event.locals.user.registered2FA) {
 		return redirect(302, "/");
 	}
-	if (event.locals.session.twoFactorVerified) {
+	if (event.locals.session.mfaVerified) {
 		return redirect(302, "/");
 	}
 	if (!event.locals.user.registeredPasskey) {
 		return redirect(302, get2FARedirect(event.locals.user));
 	}
-	const credentials = getUserPasskeyCredentials(event.locals.user.id);
+	const credentials = await getUserPasskeyCredentials(event.locals.user.id);
 	return {
 		credentials,
 		user: event.locals.user
