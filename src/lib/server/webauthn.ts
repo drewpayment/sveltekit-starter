@@ -5,6 +5,14 @@ import { and, eq } from 'drizzle-orm';
 
 const challengeBucket = new Set<string>();
 
+// Helper function to ensure we're working with Uint8Array
+function ensureUint8Array(data: Buffer | Uint8Array): Uint8Array {
+  if (data instanceof Buffer) {
+      return new Uint8Array(data);
+  }
+  return data;
+}
+
 export function createWebAuthnChallenge(): Uint8Array {
 	const challenge = new Uint8Array(20);
 	crypto.getRandomValues(challenge);
@@ -33,20 +41,30 @@ export async function getUserPasskeyCredentials(userId: number): Promise<WebAuth
 }
 
 export async function getPasskeyCredential(credentialId: Uint8Array): Promise<WebAuthnUserCredential | null> {
-  return (await db.select({
-    id: passkeyCredentials.id,
-    userId: passkeyCredentials.userId,
-    name: passkeyCredentials.name,
-    algorithmId: passkeyCredentials.algorithmId,
-    publicKey: passkeyCredentials.publicKey,
-  })
-  .from(passkeyCredentials)
-  .where(eq(passkeyCredentials.credentialId, credentialId))) as unknown as WebAuthnUserCredential | null;
+  const rows = await db.select({
+      id: passkeyCredentials.id,
+      credentialId: passkeyCredentials.credentialId,
+      userId: passkeyCredentials.userId,
+      name: passkeyCredentials.name,
+      algorithmId: passkeyCredentials.algorithmId,
+      publicKey: passkeyCredentials.publicKey,
+    })
+    .from(passkeyCredentials)
+    .where(eq(passkeyCredentials.credentialId, Buffer.from(credentialId)));
+    
+  if (!rows || !rows.length) return null;
+  
+  return {
+    ...rows[0],
+    credentialId: ensureUint8Array(rows[0].credentialId),
+    publicKey: ensureUint8Array(rows[0].publicKey!),
+  } as unknown as WebAuthnUserCredential;
 }
 
 export async function getUserPasskeyCredential(userId: number, credentialId: Uint8Array): Promise<WebAuthnUserCredential | null> {
 	const rows = await db.select({
       id: passkeyCredentials.id,
+      credentialId: passkeyCredentials.credentialId,
       userId: passkeyCredentials.userId,
       name: passkeyCredentials.name,
       algorithmId: passkeyCredentials.algorithmId,
@@ -60,14 +78,54 @@ export async function getUserPasskeyCredential(userId: number, credentialId: Uin
   return cred as WebAuthnUserCredential | null;
 }
 
+// Helper to log binary data state
+function inspectBinary(label: string, data: Buffer | Uint8Array) {
+  console.log(`\n=== ${label} ===`);
+  console.log('Type:', Object.prototype.toString.call(data));
+  console.log('Constructor:', data.constructor.name);
+  console.log('isBuffer:', Buffer.isBuffer(data));
+  console.log('isUint8Array:', data instanceof Uint8Array);
+  console.log('First byte (hex):', data[0]?.toString(16));
+  console.log('Length:', data.length);
+  if (data[0] === 0x7b) { // '{' character
+      try {
+          const str = data.toString('utf8').slice(0, 50);
+          console.log('Starts with JSON:', str + '...');
+      } catch (e) {}
+  }
+  console.log('First 10 bytes:', Array.from(data.slice(0, 10)));
+  console.log('=================\n');
+}
+
 export async function createPasskeyCredential(credential: WebAuthnUserCredential): Promise<void> {
+  // Log incoming data
+  inspectBinary('Incoming credentialId', credential.credentialId);
+  inspectBinary('Incoming publicKey', credential.publicKey);
+  
+  // Create binary buffers explicitly
+  const credentialIdBuffer = Buffer.from(
+      credential.credentialId.buffer, 
+      credential.credentialId.byteOffset, 
+      credential.credentialId.length
+  );
+  
+  const publicKeyBuffer = Buffer.from(
+      credential.publicKey.buffer,
+      credential.publicKey.byteOffset,
+      credential.publicKey.length
+  );
+  
+  // Log after conversion
+  inspectBinary('credentialId as Buffer', credentialIdBuffer);
+  inspectBinary('publicKey as Buffer', publicKeyBuffer);
+  
   try {
     await db.insert(passkeyCredentials).values({
-      credentialId: credential.credentialId,
+      credentialId: credentialIdBuffer,
       userId: credential.userId,
       name: credential.name,
       algorithmId: credential.algorithmId,
-      publicKey: credential.publicKey,
+      publicKey: publicKeyBuffer,
     });
   } catch (err) {
     console.error('Error creating passkey credential:', err);

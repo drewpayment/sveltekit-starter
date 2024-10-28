@@ -67,8 +67,6 @@ export async function validateSessionToken(token: string): Promise<SessionValida
     created: rowUser.created,
     updated: rowUser.updated,
   } as AuthUser;
-	
-	console.log(result[0]);
   
 	if (Date.now() >= session.expiresAt.getTime()) {
 		await db.delete(sessions).where(eq(sessions.id, session.id));

@@ -6,6 +6,7 @@
 	import * as Card from '$lib/components/ui/card';
   import LoginForm from './login-form.svelte';
   import type { PageData } from '../$types';
+  import Button from '$lib/components/ui/button/button.svelte';
 
 	export let data: PageData;
 
@@ -22,7 +23,8 @@
 		</Card.Content>
 		<Card.Footer class="flex flex-col justify-start items-start">
 			<div>
-				<button
+				<Button
+					variant="outline"
 					on:click={async () => {
 						const challenge = await createChallenge();
 			
@@ -56,7 +58,7 @@
 						} else {
 							passkeyErrorMessage = await response.json();
 						}
-					}}>Sign in with passkeys</button
+					}}>Sign in with passkeys</Button
 				>
 				<p class="text-red-500">{passkeyErrorMessage.message}</p>
 			</div>

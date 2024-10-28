@@ -22,7 +22,8 @@ import type {
 	AuthenticatorData,
 	ClientData,
 	COSEEC2PublicKey,
-	COSERSAPublicKey
+	COSERSAPublicKey,
+	WebAuthnCredential
 } from "@oslojs/webauthn";
 import type { Actions, RequestEvent } from "./$types";
 import { superValidate } from 'sveltekit-superforms/server';
@@ -57,6 +58,64 @@ export const actions: Actions = {
 	default: action
 };
 
+// Helper functions for key encoding/decoding
+function encodePublicKey(credential: WebAuthnCredential): Uint8Array {
+	const publicKey = credential.publicKey;
+
+	if (publicKey.algorithm() === coseAlgorithmES256) {
+		const coseKey = publicKey.ec2();
+		if (coseKey.curve !== coseEllipticCurveP256) {
+			throw new Error("Unsupported curve");
+		}
+
+		// Ensure we're using the standardized SEC1 uncompressed format
+		// This should start with 0x04 followed by the x and y coordinates
+		const key = new ECDSAPublicKey(p256, coseKey.x, coseKey.y);
+		return key.encodeSEC1Uncompressed();
+	} else if (publicKey.algorithm() === coseAlgorithmRS256) {
+		const coseKey = publicKey.rsa();
+		const key = new RSAPublicKey(coseKey.n, coseKey.e);
+		return key.encodePKCS1();
+	}
+
+	throw new Error("Unsupported algorithm");
+}
+
+// Function to create a credential during registration
+async function createNewCredential(
+	authenticatorData: AuthenticatorData,
+	userId: number,
+	name: string
+): Promise<WebAuthnUserCredential> {
+	if (!authenticatorData.credential) {
+		throw new Error("No credential in authenticator data");
+	}
+
+	const algorithmId = authenticatorData.credential.publicKey.algorithm();
+	if (algorithmId !== coseAlgorithmES256 && algorithmId !== coseAlgorithmRS256) {
+		throw new Error("Unsupported algorithm");
+	}
+
+	try {
+		const encodedPublicKey = encodePublicKey(authenticatorData.credential);
+		
+		// Add this to your registration code
+		console.log('Encoded public key format:', Buffer.from(encodedPublicKey).toString('hex'));
+
+		return {
+			credentialId: Buffer.from(authenticatorData.credential.id),
+			userId,
+			algorithmId,
+			name,
+			publicKey: Buffer.from(encodedPublicKey),
+		} as unknown as WebAuthnUserCredential;
+	} catch (error) {
+		console.error('Error encoding public key:', error);
+		throw error;
+	}
+}
+
+
 async function action(event: RequestEvent) {
 	if (event.locals.session === null || event.locals.user === null) {
 		return fail(401, {
@@ -75,18 +134,14 @@ async function action(event: RequestEvent) {
 	}
 
 	const form = await superValidate(event, zod(formSchema));
-	const { 
-		name, 
-		attestation_object: encodedAttestationObject, 
-		client_data_json: encodedClientDataJSON 
+	const {
+		name,
+		attestation_object: encodedAttestationObject,
+		client_data_json: encodedClientDataJSON
 	} = form.data;
-	
+
 	if (!form.valid) return fail(400, { form });
-	
-	// const formData = await event.request.formData();
-	// const name = formData.get("name");
-	// const encodedAttestationObject = formData.get("attestation_object");
-	// const encodedClientDataJSON = formData.get("client_data_json");
+
 	if (
 		typeof name !== "string" ||
 		typeof encodedAttestationObject !== "string" ||
@@ -171,51 +226,7 @@ async function action(event: RequestEvent) {
 		});
 	}
 
-	let credential: WebAuthnUserCredential;
-	if (authenticatorData.credential.publicKey.algorithm() === coseAlgorithmES256) {
-		let cosePublicKey: COSEEC2PublicKey;
-		try {
-			cosePublicKey = authenticatorData.credential.publicKey.ec2();
-		} catch {
-			return fail(400, {
-				message: "Invalid data"
-			});
-		}
-		if (cosePublicKey.curve !== coseEllipticCurveP256) {
-			return fail(400, {
-				message: "Unsupported algorithm"
-			});
-		}
-		const encodedPublicKey = new ECDSAPublicKey(p256, cosePublicKey.x, cosePublicKey.y).encodeSEC1Uncompressed();
-		credential = {
-			credentialId: authenticatorData.credential.id,
-			userId: event.locals.user.id,
-			algorithmId: coseAlgorithmES256,
-			name,
-			publicKey: encodedPublicKey
-		} as WebAuthnUserCredential;
-	} else if (authenticatorData.credential.publicKey.algorithm() === coseAlgorithmRS256) {
-		let cosePublicKey: COSERSAPublicKey;
-		try {
-			cosePublicKey = authenticatorData.credential.publicKey.rsa();
-		} catch {
-			return fail(400, {
-				message: "Invalid data"
-			});
-		}
-		const encodedPublicKey = new RSAPublicKey(cosePublicKey.n, cosePublicKey.e).encodePKCS1();
-		credential = {
-			credentialId: authenticatorData.credential.id,
-			userId: event.locals.user.id,
-			algorithmId: coseAlgorithmRS256,
-			name,
-			publicKey: encodedPublicKey
-		} as WebAuthnUserCredential;
-	} else {
-		return fail(400, {
-			message: "Unsupported algorithm"
-		});
-	}
+	let credential = await createNewCredential(authenticatorData, event.locals.user.id, name);
 
 	// We don't have to worry about race conditions since queries are synchronous
 	const credentials = await getUserPasskeyCredentials(event.locals.user.id);
