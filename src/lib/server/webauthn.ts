@@ -2,6 +2,7 @@ import { encodeHexLowerCase } from "@oslojs/encoding";
 import { passkeyCredentials, securityKeyCredentials } from '../../db/schema';
 import { db } from '../../db';
 import { and, eq } from 'drizzle-orm';
+import { LOG_LEVEL } from '$env/static/private';
 
 const challengeBucket = new Set<string>();
 
@@ -80,6 +81,7 @@ export async function getUserPasskeyCredential(userId: number, credentialId: Uin
 
 // Helper to log binary data state
 function inspectBinary(label: string, data: Buffer | Uint8Array) {
+  if (LOG_LEVEL !== 'debug') return;
   console.log(`\n=== ${label} ===`);
   console.log('Type:', Object.prototype.toString.call(data));
   console.log('Constructor:', data.constructor.name);
@@ -136,7 +138,7 @@ export async function createPasskeyCredential(credential: WebAuthnUserCredential
 export async function deleteUserPasskeyCredential(userId: number, credentialId: Uint8Array): Promise<boolean> {
   try {
     await db.delete(passkeyCredentials)
-      .where(and(eq(passkeyCredentials.userId, userId), eq(passkeyCredentials.credentialId, credentialId)));
+      .where(and(eq(passkeyCredentials.userId, userId), eq(passkeyCredentials.credentialId, Buffer.from(credentialId))));
       
     return true;
   } catch (err) {

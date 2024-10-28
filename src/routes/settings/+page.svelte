@@ -47,11 +47,11 @@
 		<Card.Header>
 			<Card.Title>Authenticator app</Card.Title>
 		</Card.Header>
-		<Card.Content>
+		<Card.Content class="flex gap-2">
 			{#if data.user.registeredTOTP}
-				<a href="/2fa/totp/setup">Update TOTP</a>
+				<Button href="/2fa/totp/setup">Update TOTP</Button>
 				<form method="post" use:enhance action="?/disconnect_totp">
-					<Button type="submit">Disconnect</Button>
+					<Button type="submit" variant="destructive">Disconnect</Button>
 				</form>
 			{:else}
 				<Button href="/2fa/totp/setup" variant="outline">Set up TOTP</Button>

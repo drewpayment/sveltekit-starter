@@ -240,7 +240,7 @@ async function deletePasskeyAction(event: RequestEvent) {
 	} catch {
 		return fail(400);
 	}
-	const deleted = deleteUserPasskeyCredential(event.locals.user.id, credentialId);
+	const deleted = await deleteUserPasskeyCredential(event.locals.user.id, credentialId);
 	if (!deleted) {
 		return fail(400);
 	}

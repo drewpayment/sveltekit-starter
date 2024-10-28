@@ -1,4 +1,6 @@
-import { drizzle } from 'drizzle-orm/neon-http';
+import { drizzle } from 'drizzle-orm/neon-serverless';
+import { Pool } from '@neondatabase/serverless';
 import { DATABASE_URL } from '$env/static/private';
 
-export const db = drizzle(DATABASE_URL);
+const pool = new Pool({ connectionString: DATABASE_URL });
+export const db = drizzle(pool);

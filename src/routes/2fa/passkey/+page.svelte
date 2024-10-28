@@ -13,12 +13,12 @@
 </script>
 
 <div class="flex lg:h-[1000px] w-full justify-center items-center">
-	<Card.Root class="max-w-lg flex-1">
+	<Card.Root class="max-w-md flex-1">
 		<Card.Header>
-			<Card.Title>Authenticate with Passkey</Card.Title>
+			<Card.Title>Multi-factor Authentication</Card.Title>
 		</Card.Header>
 		<Card.Content>
-			<div>
+			<div class="flex flex-col gap-4">
 				<Button
 					on:click={async () => {
 						const challenge = await createChallenge();
@@ -61,21 +61,20 @@
 						} else {
 							message = await response.text();
 						}
-					}}>Authenticate</Button
+					}}>Use Passkey</Button
 				>
+	
+				{#if data.user.registeredTOTP}
+					<Button href="/2fa/totp" variant="ghost">Use authenticator apps</Button>
+				{/if}
+				{#if data.user.registeredSecurityKey}
+					<Button href="/2fa/security-key" variant="ghost">Use security keys</Button>
+				{/if}
+				
+				<Button variant="ghost" href="/2fa/reset">Use recovery code</Button>
+				
 				<p>{message}</p>
 			</div>
 		</Card.Content>
-		
-		<Card.Footer>
-			<Button variant="link" href="/2fa/reset">Use recovery code</Button>
-	
-			{#if data.user.registeredTOTP}
-				<a href="/2fa/totp">Use authenticator apps</a>
-			{/if}
-			{#if data.user.registeredSecurityKey}
-				<a href="/2fa/security-key">Use security keys</a>
-			{/if}
-		</Card.Footer>
 	</Card.Root>
 </div>

@@ -98,9 +98,6 @@ async function createNewCredential(
 
 	try {
 		const encodedPublicKey = encodePublicKey(authenticatorData.credential);
-		
-		// Add this to your registration code
-		console.log('Encoded public key format:', Buffer.from(encodedPublicKey).toString('hex'));
 
 		return {
 			credentialId: Buffer.from(authenticatorData.credential.id),

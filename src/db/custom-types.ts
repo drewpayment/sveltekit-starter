@@ -1,6 +1,8 @@
 import { customType } from 'drizzle-orm/pg-core';
+import { LOG_LEVEL } from '$env/static/private';
 
 function logBuffer(label: string, data: Uint8Array | Buffer | unknown) {
+    if (LOG_LEVEL !== 'debug') return;
     console.log(`\n=== ${label} ===`);
     console.log('Type:', Object.prototype.toString.call(data));
     console.log('Constructor:', data?.constructor.name);

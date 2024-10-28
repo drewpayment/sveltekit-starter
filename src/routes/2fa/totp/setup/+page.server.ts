@@ -5,6 +5,8 @@ import { totpUpdateBucket, updateUserTOTPKey } from "$lib/server/totp";
 import { setSessionAs2FAVerified } from "$lib/server/session";
 import { renderSVG } from "uqr";
 import { get2FARedirect } from "$lib/server/2fa";
+import { dev } from '$app/environment';
+import { PUBLIC_APP_NAME } from '$env/static/public';
 
 import type { Actions, RequestEvent } from "./$types";
 
@@ -22,7 +24,7 @@ export async function load(event: RequestEvent) {
 	const totpKey = new Uint8Array(20);
 	crypto.getRandomValues(totpKey);
 	const encodedTOTPKey = encodeBase64(totpKey);
-	const keyURI = createTOTPKeyURI("Demo", event.locals.user.email, totpKey, 30, 6);
+	const keyURI = createTOTPKeyURI(PUBLIC_APP_NAME, event.locals.user.email, totpKey, 30, 6);
 	const qrcode = renderSVG(keyURI);
 	return {
 		encodedTOTPKey,
@@ -50,7 +52,7 @@ async function action(event: RequestEvent) {
 			message: "Forbidden"
 		});
 	}
-	if (!totpUpdateBucket.check(event.locals.user.id, 1)) {
+	if (!dev && !totpUpdateBucket.check(event.locals.user.id, 1)) {
 		return fail(429, {
 			message: "Too many requests"
 		});
@@ -59,6 +61,7 @@ async function action(event: RequestEvent) {
 	const formData = await event.request.formData();
 	const encodedKey = formData.get("key");
 	const code = formData.get("code");
+	
 	if (typeof encodedKey !== "string" || typeof code !== "string") {
 		return fail(400, {
 			message: "Invalid or missing fields"
@@ -87,18 +90,21 @@ async function action(event: RequestEvent) {
 			message: "Invalid key"
 		});
 	}
-	if (!totpUpdateBucket.consume(event.locals.user.id, 1)) {
+	if (!dev && !totpUpdateBucket.consume(event.locals.user.id, 1)) {
 		return fail(429, {
 			message: "Too many requests"
 		});
 	}
+	
 	if (!verifyTOTP(key, 30, 6, code)) {
 		return fail(400, {
 			message: "Invalid code"
 		});
 	}
-	updateUserTOTPKey(event.locals.session.userId, key);
-	setSessionAs2FAVerified(event.locals.session.sessionId);
+	
+	await updateUserTOTPKey(event.locals.session.userId, key);
+	await setSessionAs2FAVerified(event.locals.session.sessionId);
+	
 	if (!event.locals.user.registered2FA) {
 		return redirect(302, "/recovery-code");
 	}

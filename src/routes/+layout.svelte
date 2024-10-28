@@ -1,4 +1,11 @@
-<script>import "../app.css";</script>
+<script lang="ts">
+	import { PUBLIC_APP_NAME } from '$env/static/public';
+	import "../app.css";
+</script>
+
+<svelte:head>
+	<title>{PUBLIC_APP_NAME}</title>
+</svelte:head>
 
 <div class="w-full">
 	<nav class="flex items-center justify-between flex-wrap bg-teal-500 p-6">
