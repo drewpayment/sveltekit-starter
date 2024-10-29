@@ -89,8 +89,9 @@
 				{#each data.passkeyCredentials as credential}
 					<li class="flex items-center px-4 gap-4">
 						<p>{credential.name}</p>
+						{@debug credential}
 						<form method="post" use:enhance action="?/delete_passkey">
-							<input type="hidden" name="credential_id" value={encodeBase64(credential.credentialId)} />
+							<input type="hidden" name="id" value={credential.id} />
 							<Button type="submit" variant="destructive" size="sm">Delete</Button>
 						</form>
 					</li>

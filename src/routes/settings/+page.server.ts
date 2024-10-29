@@ -230,17 +230,12 @@ async function deletePasskeyAction(event: RequestEvent) {
 		return fail(403);
 	}
 	const formData = await event.request.formData();
-	const encodedCredentialId = formData.get("credential_id");
-	if (typeof encodedCredentialId !== "string") {
+	const passkeyId = formData.get("id") as any;
+	if (isNaN(Number(passkeyId))) {
 		return fail(400);
 	}
-	let credentialId: Uint8Array;
-	try {
-		credentialId = decodeBase64(encodedCredentialId);
-	} catch {
-		return fail(400);
-	}
-	const deleted = await deleteUserPasskeyCredential(event.locals.user.id, credentialId);
+	
+	const deleted = await deleteUserPasskeyCredential(event.locals.user.id, Number(passkeyId));
 	if (!deleted) {
 		return fail(400);
 	}

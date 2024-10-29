@@ -1,7 +1,7 @@
 import { encodeHexLowerCase } from "@oslojs/encoding";
 import { passkeyCredentials, securityKeyCredentials } from '../../db/schema';
 import { db } from '../../db';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, inArray, sql } from 'drizzle-orm';
 import { LOG_LEVEL } from '$env/static/private';
 
 const challengeBucket = new Set<string>();
@@ -28,7 +28,7 @@ export function verifyWebAuthnChallenge(challenge: Uint8Array): boolean {
 }
 
 export async function getUserPasskeyCredentials(userId: number): Promise<WebAuthnUserCredential[]> {
-  const credentials = (await db.select({
+  return (await db.select({
       id: passkeyCredentials.id,
       credentialId: passkeyCredentials.credentialId,
       userId: passkeyCredentials.userId,
@@ -38,7 +38,14 @@ export async function getUserPasskeyCredentials(userId: number): Promise<WebAuth
     })
     .from(passkeyCredentials)
     .where(eq(passkeyCredentials.userId, userId))) as unknown as WebAuthnUserCredential[];
-	return credentials;
+    
+  // return credentials.map(credential => {
+  //   return {
+  //     ...credential,
+  //     credentialId: Buffer.from(credential.credentialId),
+  //     publicKey: Buffer.from(credential.publicKey!),
+  //   };
+  // });
 }
 
 export async function getPasskeyCredential(credentialId: Uint8Array): Promise<WebAuthnUserCredential | null> {
@@ -135,12 +142,29 @@ export async function createPasskeyCredential(credential: WebAuthnUserCredential
   }
 }
 
-export async function deleteUserPasskeyCredential(userId: number, credentialId: Uint8Array): Promise<boolean> {
+function compareCredentialIds(a: Buffer | Uint8Array, b: Buffer | Uint8Array): boolean {
+  if (a.length !== b.length) {
+    return false;
+  }
+  
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+export async function deleteUserPasskeyCredential(userId: number, passkeyId: number): Promise<boolean> {
   try {
-    await db.delete(passkeyCredentials)
-      .where(and(eq(passkeyCredentials.userId, userId), eq(passkeyCredentials.credentialId, Buffer.from(credentialId))));
+    // Delete by primary key instead of binary data
+    const result = await db.delete(passkeyCredentials)
+      .where(and(eq(passkeyCredentials.id, passkeyId), eq(passkeyCredentials.userId, userId)))
+      .returning({ id: passkeyCredentials.id });
       
-    return true;
+    const deleted = result.length > 0;
+    
+    return deleted;
   } catch (err) {
     console.error('Error deleting passkey credential:', err);
     return false;
