@@ -1,9 +1,10 @@
 import { and, eq } from 'drizzle-orm';
 import { db } from '../../db';
-import { passkeyCredentials, securityKeyCredentials, totpCredentials, users, type AuthUser, type User } from '../../db/schema';
+import { passkeyCredentials, securityKeyCredentials, totpCredentials, users, type User } from '../../db/schema';
 import { decryptToString, encryptString } from "./encryption";
 import { hashPassword } from "./password";
 import { generateRandomRecoveryCode } from "./utils";
+import type { AuthUser } from '$lib/types/auth-user.model';
 
 export function verifyUsernameInput(username: string): boolean {
 	return username.length > 3 && username.length < 32 && username.trim() === username;

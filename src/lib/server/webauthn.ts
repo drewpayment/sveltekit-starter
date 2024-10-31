@@ -3,6 +3,7 @@ import { passkeyCredentials, securityKeyCredentials } from '../../db/schema';
 import { db } from '../../db';
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import { LOG_LEVEL } from '$env/static/private';
+import type { WebAuthnUserCredential } from '../types/webauthn-user-credential.model';
 
 const challengeBucket = new Set<string>();
 
@@ -223,11 +224,3 @@ export async function deleteUserSecurityKeyCredential(userId: number, credential
   }
 }
 
-export interface WebAuthnUserCredential {
-  id: number;
-	credentialId: Uint8Array;
-	userId: number;
-	name: string;
-	algorithmId: number;
-	publicKey: Uint8Array;
-}

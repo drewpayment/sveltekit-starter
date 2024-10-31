@@ -101,9 +101,3 @@ export type Session = InferSelectModel<typeof sessions>;
 export type PasswordReset = InferSelectModel<typeof passwordResets>;
 export type EmailVerificationRequest = InferSelectModel<typeof emailVerificationRequest>;
 
-export interface AuthUser extends User {
-  registeredTOTP: boolean;
-  registeredSecurityKey: boolean;
-  registeredPasskey: boolean;
-  registered2FA: boolean;
-}

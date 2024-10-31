@@ -10,8 +10,8 @@
   import { zodClient } from "sveltekit-superforms/adapters";
   import { encodeBase64 } from "@oslojs/encoding";
 	import { createChallenge } from "$lib/client/webauthn";
-  import type { AuthUser } from '../../../../db/schema';
-  import type { WebAuthnUserCredential } from '$lib/server/webauthn';
+  import type { AuthUser } from '../../../../lib/types/auth-user.model';
+    import type { WebAuthnUserCredential } from '$lib/types/webauthn-user-credential.model';
   import Button from '$lib/components/ui/button/button.svelte';
  
   export let data: {

@@ -21,6 +21,7 @@
 				
 				if (password !== confirmPassword) {
 					cancel();
+					return;
 				} 
 				
 				return ({ result, update }) => {

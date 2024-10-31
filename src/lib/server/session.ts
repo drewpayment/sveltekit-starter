@@ -3,7 +3,8 @@ import { encodeBase32LowerCaseNoPadding, encodeHexLowerCase } from "@oslojs/enco
 import { sha256 } from "@oslojs/crypto/sha2";
 import { eq } from "drizzle-orm";
 import { db } from '../../db';
-import { type Session, sessions, users, type User, type AuthUser, totpCredentials, passkeyCredentials, securityKeyCredentials, type TOTPCredentials, type PasskeyCredentials, type SecurityKeyCredentials } from '../../db/schema';
+import { type Session, sessions, users, totpCredentials, passkeyCredentials, securityKeyCredentials } from '../../db/schema';
+import type { AuthUser } from '$lib/types/auth-user.model';
 
 
 export function generateSessionToken(): string {

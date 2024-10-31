@@ -2,8 +2,9 @@ import { generateRandomRecoveryCode } from "./utils";
 import { ExpiringTokenBucket } from "./rate-limit";
 import { decryptToString, encryptString } from "./encryption";
 import { db } from '../../db';
-import { passkeyCredentials, securityKeyCredentials, sessions, totpCredentials, users, type AuthUser, type User } from '../../db/schema';
+import { passkeyCredentials, securityKeyCredentials, sessions, totpCredentials, users, type User } from '../../db/schema';
 import { eq } from 'drizzle-orm';
+import type { AuthUser } from '$lib/types/auth-user.model';
 
 export const recoveryCodeBucket = new ExpiringTokenBucket<number>(3, 60 * 60);
 

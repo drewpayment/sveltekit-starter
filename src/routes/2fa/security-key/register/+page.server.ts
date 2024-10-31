@@ -20,7 +20,7 @@ import {
 import { setSessionAs2FAVerified } from "$lib/server/session";
 import { RSAPublicKey } from "@oslojs/crypto/rsa";
 
-import type { WebAuthnUserCredential } from "$lib/server/webauthn";
+import type { WebAuthnUserCredential } from '$lib/types/webauthn-user-credential.model';
 import type {
 	AttestationStatement,
 	AuthenticatorData,

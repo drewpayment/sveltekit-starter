@@ -1,11 +1,11 @@
 import { encodeHexLowerCase } from "@oslojs/encoding";
 import { generateRandomOTP } from "./utils";
 import { sha256 } from "@oslojs/crypto/sha2";
-
 import type { RequestEvent } from "@sveltejs/kit";
-import { passkeyCredentials, passwordResets, securityKeyCredentials, totpCredentials, users, type AuthUser, type User } from '../../db/schema';
+import { passkeyCredentials, passwordResets, securityKeyCredentials, totpCredentials, users, type User } from '../../db/schema';
 import { db } from '../../db';
 import { eq } from 'drizzle-orm';
+import type { AuthUser } from '$lib/types/auth-user.model';
 
 export async function createPasswordResetSession(token: string, userId: number, email: string): Promise<PasswordResetSession> {
 	const sessionId = encodeHexLowerCase(sha256(new TextEncoder().encode(token)));
