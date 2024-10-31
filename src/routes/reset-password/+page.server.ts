@@ -66,8 +66,8 @@ async function action(event: RequestEvent) {
 			message: "Weak password"
 		});
 	}
-	invalidateUserPasswordResetSessions(passwordResetSession.userId);
-	invalidateUserSessions(passwordResetSession.userId);
+	await invalidateUserPasswordResetSessions(passwordResetSession.userId);
+	await invalidateUserSessions(passwordResetSession.userId);
 	await updateUserPassword(passwordResetSession.userId, password);
 
 	const sessionFlags: SessionFlags = {

@@ -89,13 +89,18 @@
 				{#each data.passkeyCredentials as credential}
 					<li class="flex items-center px-4 gap-4">
 						<p>{credential.name}</p>
-						{@debug credential}
 						<form method="post" use:enhance action="?/delete_passkey">
 							<input type="hidden" name="id" value={credential.id} />
 							<Button type="submit" variant="destructive" size="sm">Delete</Button>
 						</form>
 					</li>
 				{/each}
+				{#if data.passkeyCredentials.length === 0}
+					<li class="flex flex-col justify-center px-4 gap-4">
+						<p>No passkeys registered.</p>
+						<Button href="/2fa/passkey/register" variant="outline" size="sm">Register passkey</Button>
+					</li>	
+				{/if}
 			</ul>
 		</Card.Content>
 	</Card.Root>
@@ -119,8 +124,9 @@
 					</li>
 				{/each}
 				{#if data.securityKeyCredentials.length === 0}
-					<li>
+					<li class="flex flex-col justify-center px-4 gap-4">
 						<p>No security keys registered.</p>
+						<Button href="/2fa/security-key/register" variant="outline" size="sm">Register security key</Button>
 					</li>
 				{/if}
 			</ul>

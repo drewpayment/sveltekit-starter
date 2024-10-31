@@ -37,11 +37,11 @@ export async function load(event: RequestEvent) {
 	if (!event.locals.user.emailVerified) {
 		return redirect(302, "/verify-email");
 	}
-	if (event.locals.user.registered2FA && !event.locals.session.twoFactorVerified) {
+	if (event.locals.user.registered2FA && !event.locals.session.mfaVerified) {
 		return redirect(302, get2FARedirect(event.locals.user));
 	}
 
-	const credentials = getUserSecurityKeyCredentials(event.locals.user.id);
+	const credentials = await getUserSecurityKeyCredentials(event.locals.user.id);
 
 	const credentialUserId = new Uint8Array(8);
 	bigEndian.putUint64(credentialUserId, BigInt(event.locals.user.id), 0);
@@ -68,7 +68,7 @@ async function action(event: RequestEvent) {
 			message: "Forbidden"
 		});
 	}
-	if (event.locals.user.registered2FA && !event.locals.session.twoFactorVerified) {
+	if (event.locals.user.registered2FA && !event.locals.session.mfaVerified) {
 		return fail(403, {
 			message: "Forbidden"
 		});
@@ -217,15 +217,15 @@ async function action(event: RequestEvent) {
 	}
 
 	try {
-		createSecurityKeyCredential(credential);
+		await createSecurityKeyCredential(credential);
 	} catch (e) {
 		return fail(500, {
 			message: "Internal error"
 		});
 	}
 
-	if (!event.locals.session.twoFactorVerified) {
-		setSessionAs2FAVerified(event.locals.session.id);
+	if (!event.locals.session.mfaVerified) {
+		await setSessionAs2FAVerified(`${event.locals.session.id}`);
 	}
 
 	if (!event.locals.user.registered2FA) {
