@@ -29,7 +29,7 @@
 								timeout: 60000,
 								challenge,
 								userVerification: "preferred",
-								allowCredentials: data.credentials.map((credential) => {
+								allowCredentials: data.credentials && data.credentials.map((credential) => {
 									return {
 										id: credential.credentialId,
 										type: "public-key",
