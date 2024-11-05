@@ -3,7 +3,7 @@
 	import type { PageData } from './$types';
   import SignupForm from './signup-form.svelte';
 	
-	export let data: PageData;
+	let { data }: { data: PageData } = $props();
 </script>
 
 <div class="flex lg:h-[1000px] w-full justify-center items-center">

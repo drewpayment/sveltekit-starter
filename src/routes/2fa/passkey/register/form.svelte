@@ -14,14 +14,15 @@
     import type { WebAuthnUserCredential } from '$lib/types/webauthn-user-credential.model';
   import Button from '$lib/components/ui/button/button.svelte';
  
-  export let data: {
+	let { data }: { data: {
     form: SuperValidated<Infer<FormSchema>>;
     user: AuthUser;
     credentialUserId: Uint8Array;
     credentials: WebAuthnUserCredential[];
-  }
-  let encodedAttestationObject: string | null = null;
-	let encodedClientDataJSON: string | null = null;
+  } } = $props();
+	
+  let encodedAttestationObject: string | null = $state(null);
+	let encodedClientDataJSON: string | null = $state(null);
  
   const form = superForm(data.form, {
     validators: zodClient(formSchema),
@@ -33,7 +34,7 @@
 <Button
   variant="secondary"
 	disabled={encodedAttestationObject !== null && encodedClientDataJSON !== null}
-	on:click={async () => {
+	onclick={async () => {
 		const challenge = await createChallenge();
 
 		const credential = await navigator.credentials.create({

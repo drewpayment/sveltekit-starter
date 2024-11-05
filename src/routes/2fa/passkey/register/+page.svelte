@@ -3,7 +3,7 @@
   import Form from './form.svelte';
 	import * as Card from "$lib/components/ui/card";
 
-	export let data: PageData;
+	let { data }: { data: PageData } = $props();
 </script>
 
 <div class="flex lg:h-100 w-full justify-center items-center">

@@ -6,8 +6,7 @@
   import Label from '$lib/components/ui/label/label.svelte';
 	import type { ActionData, PageData } from "./$types";
 
-	export let data: PageData;
-	export let form: ActionData;
+  let { data, form }: { data: PageData; form: ActionData } = $props();
 </script>
 
 <div class="flex w-full px-4 my-4">

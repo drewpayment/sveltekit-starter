@@ -7,9 +7,9 @@
 	import type { PageData } from "./$types";
   import Button from '$lib/components/ui/button/button.svelte';
 
-	export let data: PageData;
+	let { data }: { data: PageData } = $props();
 
-	let message = "";
+	let message = $state("");
 </script>
 
 <div class="flex lg:h-[1000px] w-full justify-center items-center">
@@ -20,7 +20,7 @@
 		<Card.Content>
 			<div class="flex flex-col gap-4">
 				<Button
-					on:click={async () => {
+					onclick={async () => {
 						const challenge = await createChallenge();
 			
 						const credential = await navigator.credentials.get({

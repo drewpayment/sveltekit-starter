@@ -6,7 +6,7 @@
 	import Label from '$lib/components/ui/label/label.svelte';
 	import type { ActionData } from "./$types";
 
-	export let form: ActionData;
+	let { form }: { form: ActionData } = $props();
 </script>
 
 <div class="flex lg:h-[1000px] w-full justify-center items-center">

@@ -5,17 +5,16 @@
 
 	import type { ActionData, PageData } from "./$types";
 
-	export let data: PageData;
-	export let form: ActionData;
+	let { data, form }: { data: PageData; form: ActionData } = $props();
 
-	let encodedAttestationObject: string | null = null;
-	let encodedClientDataJSON: string | null = null;
+	let encodedAttestationObject: string | null = $state(null);
+	let encodedClientDataJSON: string | null = $state(null);
 </script>
 
 <h1>Register security key</h1>
 <button
 	disabled={encodedAttestationObject !== null && encodedClientDataJSON !== null}
-	on:click={async () => {
+	onclick={async () => {
 		const challenge = await createChallenge();
 
 		const credential = await navigator.credentials.create({

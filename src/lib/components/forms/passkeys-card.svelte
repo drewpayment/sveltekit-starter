@@ -5,7 +5,9 @@
 		import type { WebAuthnUserCredential } from '$lib/types/webauthn-user-credential.model';
 	import { Button } from '../ui/button';
   
-  export let passkeyCredentials: WebAuthnUserCredential[];
+  let { passkeyCredentials } = $props<{
+    passkeyCredentials: WebAuthnUserCredential[];
+  }>();
 </script>
 
 <Card.Root>
