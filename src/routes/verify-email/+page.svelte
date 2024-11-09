@@ -4,8 +4,7 @@
 	import type { ActionData, PageData } from "./$types";
   import Form from './form.svelte';
 
-	export let data: PageData;
-	export let form: ActionData;
+	let { data, form }: { data: PageData; form: ActionData; } = $props();
 </script>
 
 <div class="flex lg:h-[1000px] w-full justify-center items-center">

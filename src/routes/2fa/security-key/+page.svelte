@@ -5,22 +5,22 @@
 
 	import type { PageData } from "./$types";
 
-	export let data: PageData;
+	let { data }: { data: PageData } = $props();
 
-	let message = "";
+	let message = $state("");
 </script>
 
 <h1>Authenticate with security keys</h1>
 <div>
 	<button
-		on:click={async () => {
+		onclick={async () => {
 			const challenge = await createChallenge();
 
 			const credential = await navigator.credentials.get({
 				publicKey: {
 					challenge,
 					userVerification: "discouraged",
-					allowCredentials: data.credentials.map((credential) => {
+					allowCredentials: (await data.credentials).map((credential) => {
 						return {
 							id: credential.id,
 							type: "public-key"

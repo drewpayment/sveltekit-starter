@@ -5,8 +5,9 @@
 	import PasskeysCard from '$lib/components/forms/passkeys-card.svelte';
 	import SecurityKeysCard from '$lib/components/forms/security-keys-card.svelte';
 	
-	export let data: PageData;
-	export let form: ActionData;
+	let { data } = $props<{ 
+		data: PageData;
+	}>();
 </script>
 
 <div class="flex w-full px-4 my-4">

@@ -9,7 +9,7 @@
   } from "sveltekit-superforms";
   import { zodClient } from "sveltekit-superforms/adapters";
  
-  export let data: SuperValidated<Infer<FormSchema>>;
+  let { data }: { data: SuperValidated<Infer<FormSchema>>; } = $props();
  
   const form = superForm(data, {
     validators: zodClient(formSchema),

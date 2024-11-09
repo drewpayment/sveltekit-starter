@@ -5,8 +5,10 @@
 	import type { AuthUser } from '../../types/auth-user.model';
 	import { Button } from '../ui/button';
   
-  export let user: AuthUser;
-  export let recoveryCode: string | null;
+  let { user, recoveryCode } = $props<{
+    user: AuthUser;
+    recoveryCode: string | null;
+  }>();
 </script>
 
 <Card.Root>

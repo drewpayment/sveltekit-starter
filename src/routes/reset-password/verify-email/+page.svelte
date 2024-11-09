@@ -3,8 +3,7 @@
 
 	import type { ActionData, PageData } from "./$types";
 
-	export let data: PageData;
-	export let form: ActionData;
+	let { data, form }: { data: PageData; form: ActionData } = $props();
 </script>
 
 <h1>Verify your email address</h1>

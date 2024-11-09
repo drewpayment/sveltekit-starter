@@ -5,7 +5,7 @@
 	import "../app.css";
 	import type { LayoutServerData } from './$types';
 	
-	export let data: LayoutServerData;
+	let { data } = $props<{ data: LayoutServerData }>();
 </script>
 
 <svelte:head>

@@ -6,7 +6,7 @@
 	import { encodeBase64 } from '@oslojs/encoding';
 	import { Button } from '../ui/button';
   
-  export let securityKeyCredentials: WebAuthnUserCredential[];
+  let { securityKeyCredentials } = $props<{ securityKeyCredentials: WebAuthnUserCredential[]; }>();
 </script>
 
 <Card.Root class="col-span-2">

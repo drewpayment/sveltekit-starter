@@ -4,7 +4,7 @@
 	import * as Card from '$lib/components/ui/card';
   import type { PageData } from './$types';
 	
-	export let data: PageData;
+	let { data } = $props<{ data: PageData }>();
 </script>
 
 <div class="flex lg:h-[1000px] w-full justify-center items-center">

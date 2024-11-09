@@ -8,9 +8,9 @@
   import type { PageData } from '../$types';
   import Button from '$lib/components/ui/button/button.svelte';
 
-	export let data: PageData;
+	let { data }: { data: PageData } = $props<{ data: PageData }>();
 
-	let passkeyErrorMessage = {} as { message: string };
+	let passkeyErrorMessage = $state({} as { message: string });
 </script>
 
 <div class="flex lg:h-[1000px] w-full justify-center items-center">
@@ -25,7 +25,7 @@
 			<div>
 				<Button
 					variant="outline"
-					on:click={async () => {
+					onclick={async () => {
 						const challenge = await createChallenge();
 			
 						const credential = await navigator.credentials.get({

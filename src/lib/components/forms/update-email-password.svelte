@@ -8,12 +8,12 @@
 	import { Input } from '../ui/input';
 	import { Label } from '../ui/label';
   
-  export let user: AuthUser;
+  let { user } = $props<{ user: AuthUser }>();
   
-  let hasIncorrectPassword = false;
-  let hasError = false;
-  let hasServerError = false;
-  let serverErrorMessage = '';
+  let hasIncorrectPassword = $state(false);
+  let hasError = $state(false);
+  let hasServerError = $state(false);
+  let serverErrorMessage = $state('');
   
   const parseServerError = (result: ActionResult<Record<string, unknown>>) => {
     const data = 'data' in result ? result.data : null;
@@ -61,7 +61,7 @@
         
         return ({ result }) => { 
         
-          if (result.status === 400 && 'data' in result && result.data && result.data.password &&
+          if (result.status === 400 && 'data' in result && result.data && result.data.password && 
             result.data.password.message === 'Invalid or missing fields'
           ) {
             hasIncorrectPassword = true;
